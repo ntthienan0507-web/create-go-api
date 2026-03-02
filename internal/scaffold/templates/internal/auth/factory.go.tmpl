@@ -1,0 +1,23 @@
+package auth
+
+import (
+	"fmt"
+
+	"{{.ModulePath}}/internal/config"
+)
+
+// NewProvider selects the auth provider based on AUTH_PROVIDER config.
+func NewProvider(cfg *config.Config) (Provider, error) {
+	switch cfg.AuthProvider {
+{{- if .IncludeJWT}}
+	case "jwt":
+		return NewJWTProvider(cfg), nil
+{{- end}}
+{{- if .IncludeKeycloak}}
+	case "keycloak":
+		return NewKeycloakProvider(cfg), nil
+{{- end}}
+	default:
+		return nil, fmt.Errorf("unknown AUTH_PROVIDER %q", cfg.AuthProvider)
+	}
+}
