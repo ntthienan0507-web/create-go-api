@@ -2,17 +2,17 @@ package scaffold
 
 // FileRule defines when a template file should be included.
 type FileRule struct {
-	TmplPath string                    // path inside templates/ FS
-	OutPath  string                    // output path (minus .tmpl)
-	Include  func(*ProjectConfig) bool // nil = always include
+	TmplPath    string                        // path inside templates/ FS
+	OutPath     string                        // static output path
+	OutPathFunc func(*ProjectConfig) string   // dynamic output path (overrides OutPath)
+	Include     func(*ProjectConfig) bool     // nil = always include
 }
 
 // manifest lists every template file and its inclusion predicate.
 var manifest = []FileRule{
 	// --- Always included (core skeleton) ---
-	{TmplPath: "cmd/server/main.go.tmpl", OutPath: "cmd/server/main.go"},
-	{TmplPath: "cmd/cli/main.go.tmpl", OutPath: "cmd/cli/main.go"},
-	{TmplPath: "cmd/dbtest/main.go.tmpl", OutPath: "cmd/dbtest/main.go"},
+	{TmplPath: "cmd/app/main.go.tmpl",
+		OutPathFunc: func(c *ProjectConfig) string { return "cmd/" + c.ProjectName + "/main.go" }},
 	{TmplPath: "internal/config/config.go.tmpl", OutPath: "internal/config/config.go"},
 	{TmplPath: "internal/app/app.go.tmpl", OutPath: "internal/app/app.go"},
 	{TmplPath: "internal/middleware/auth.go.tmpl", OutPath: "internal/middleware/auth.go"},

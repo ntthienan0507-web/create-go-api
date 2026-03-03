@@ -78,8 +78,12 @@ func processTemplate(cfg *ProjectConfig, rule FileRule, outputDir string) error 
 		return fmt.Errorf("parse template: %w", err)
 	}
 
-	// Create output file
-	outPath := filepath.Join(outputDir, rule.OutPath)
+	// Resolve output path (dynamic or static)
+	resolvedPath := rule.OutPath
+	if rule.OutPathFunc != nil {
+		resolvedPath = rule.OutPathFunc(cfg)
+	}
+	outPath := filepath.Join(outputDir, resolvedPath)
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 		return err
 	}

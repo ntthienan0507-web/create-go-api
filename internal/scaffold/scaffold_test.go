@@ -25,9 +25,7 @@ func TestScaffold(t *testing.T) {
 				IncludeSampleModule: true,
 			},
 			mustExist: []string{
-				"cmd/server/main.go",
-				"cmd/cli/main.go",
-				"cmd/dbtest/main.go",
+				"cmd/my-api/main.go",
 				"internal/app/app.go",
 				"internal/config/config.go",
 				"internal/auth/provider.go",
@@ -63,6 +61,7 @@ func TestScaffold(t *testing.T) {
 				IncludeSampleModule: true,
 			},
 			mustExist: []string{
+				"cmd/my-api/main.go",
 				"internal/auth/keycloak.go",
 				"internal/database/gorm.go",
 				"internal/module/user/repository_gorm.go",
@@ -87,6 +86,7 @@ func TestScaffold(t *testing.T) {
 				IncludeSwagger:      true,
 			},
 			mustExist: []string{
+				"cmd/my-api/main.go",
 				"internal/auth/jwt.go",
 				"internal/auth/keycloak.go",
 				"internal/database/postgres.go",
@@ -109,6 +109,7 @@ func TestScaffold(t *testing.T) {
 				IncludeSampleModule: false,
 			},
 			mustExist: []string{
+				"cmd/my-api/main.go",
 				"internal/auth/jwt.go",
 				"internal/database/postgres.go",
 				"internal/database/store.go",
@@ -135,6 +136,7 @@ func TestScaffold(t *testing.T) {
 				IncludeSampleModule: false,
 			},
 			mustExist: []string{
+				"cmd/my-api/main.go",
 				"internal/auth/jwt.go",
 				"internal/database/gorm.go",
 			},
@@ -154,6 +156,7 @@ func TestScaffold(t *testing.T) {
 				IncludeSampleModule: false,
 			},
 			mustExist: []string{
+				"cmd/my-api/main.go",
 				"internal/auth/keycloak.go",
 				"internal/database/postgres.go",
 				"internal/database/gorm.go",

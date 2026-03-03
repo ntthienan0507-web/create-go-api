@@ -6,17 +6,33 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pressly/goose/v3"
+	"go.uber.org/zap"
 
+	"{{.ModulePath}}/internal/app"
 	"{{.ModulePath}}/internal/config"
+	"{{.ModulePath}}/internal/database"
+	"{{.ModulePath}}/pkg/logger"
 )
 
 const migrationsDir = "db/migrations"
+{{- if .IncludeSwagger}}
+
+// @title           {{.ProjectName}} API
+// @version         1.0
+// @description     API server for {{.ProjectName}}
+// @BasePath        /api/v1
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+{{- end}}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -24,16 +40,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfg, err := config.Load(".")
-	if err != nil {
-		fatal("load config: %v", err)
-	}
-
 	switch os.Args[1] {
+	case "serve":
+		runServe()
 	case "migrate":
-		handleMigrate(cfg)
+		runMigrate()
 	case "db":
-		handleDB(cfg)
+		runDB()
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n\n", os.Args[1])
 		printUsage()
@@ -42,12 +55,43 @@ func main() {
 }
 
 // ============================================
-// migrate subcommands
+// serve
 // ============================================
 
-func handleMigrate(cfg *config.Config) {
+func runServe() {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	cfg := mustLoadConfig()
+
+	log, err := logger.New(cfg.LogFormat, cfg.LogLevel)
+	if err != nil {
+		fatal("init logger: %v", err)
+	}
+
+	// Auto-migrate on startup
+	if err := database.RunMigrations(cfg.DSN(), migrationsDir, log); err != nil {
+		log.Error("migration failed", zap.Error(err))
+	}
+
+	application, err := app.New(ctx, cfg, log)
+	if err != nil {
+		log.Fatal("init app failed", zap.Error(err))
+	}
+	defer application.Shutdown()
+
+	if err := application.Run(); err != nil {
+		log.Fatal("server error", zap.Error(err))
+	}
+}
+
+// ============================================
+// migrate
+// ============================================
+
+func runMigrate() {
 	if len(os.Args) < 3 {
-		fmt.Println("Usage: cli migrate <command>")
+		fmt.Println("Usage: {{.ProjectName}} migrate <command>")
 		fmt.Println()
 		fmt.Println("Commands:")
 		fmt.Println("  up              Run all pending migrations")
@@ -61,13 +105,12 @@ func handleMigrate(cfg *config.Config) {
 		os.Exit(1)
 	}
 
+	cfg := mustLoadConfig()
 	db := openDB(cfg)
 	defer db.Close()
 	setGoose()
 
-	cmd := os.Args[2]
-
-	switch cmd {
+	switch os.Args[2] {
 	case "up":
 		must(goose.Up(db, migrationsDir))
 		fmt.Println("Migrations applied successfully")
@@ -81,27 +124,22 @@ func handleMigrate(cfg *config.Config) {
 
 	case "create":
 		if len(os.Args) < 4 {
-			fatal("Usage: cli migrate create <name>")
+			fatal("Usage: {{.ProjectName}} migrate create <name>")
 		}
-		name := os.Args[3]
-		must(goose.Create(db, migrationsDir, name, "sql"))
-		fmt.Printf("Created migration: %s\n", name)
+		must(goose.Create(db, migrationsDir, os.Args[3], "sql"))
+		fmt.Printf("Created migration: %s\n", os.Args[3])
 
 	case "up-to":
 		if len(os.Args) < 4 {
-			fatal("Usage: cli migrate up-to <version>")
+			fatal("Usage: {{.ProjectName}} migrate up-to <version>")
 		}
-		ver := parseInt64(os.Args[3])
-		must(goose.UpTo(db, migrationsDir, ver))
-		fmt.Printf("Migrated up to version %d\n", ver)
+		must(goose.UpTo(db, migrationsDir, parseInt64(os.Args[3])))
 
 	case "down-to":
 		if len(os.Args) < 4 {
-			fatal("Usage: cli migrate down-to <version>")
+			fatal("Usage: {{.ProjectName}} migrate down-to <version>")
 		}
-		ver := parseInt64(os.Args[3])
-		must(goose.DownTo(db, migrationsDir, ver))
-		fmt.Printf("Rolled back to version %d\n", ver)
+		must(goose.DownTo(db, migrationsDir, parseInt64(os.Args[3])))
 
 	case "version":
 		ver, err := goose.GetDBVersion(db)
@@ -115,17 +153,17 @@ func handleMigrate(cfg *config.Config) {
 		fmt.Println("Fixed migration sequence numbers")
 
 	default:
-		fatal("Unknown migrate command: %s", cmd)
+		fatal("Unknown migrate command: %s", os.Args[2])
 	}
 }
 
 // ============================================
-// db subcommands
+// db
 // ============================================
 
-func handleDB(cfg *config.Config) {
+func runDB() {
 	if len(os.Args) < 3 {
-		fmt.Println("Usage: cli db <command>")
+		fmt.Println("Usage: {{.ProjectName}} db <command>")
 		fmt.Println()
 		fmt.Println("Commands:")
 		fmt.Println("  test            Test database connection")
@@ -136,9 +174,9 @@ func handleDB(cfg *config.Config) {
 		os.Exit(1)
 	}
 
-	cmd := os.Args[2]
+	cfg := mustLoadConfig()
 
-	switch cmd {
+	switch os.Args[2] {
 	case "test":
 		dbTest(cfg)
 
@@ -147,32 +185,38 @@ func handleDB(cfg *config.Config) {
 
 	case "columns":
 		if len(os.Args) < 4 {
-			fatal("Usage: cli db columns <table_name>")
+			fatal("Usage: {{.ProjectName}} db columns <table_name>")
 		}
-		table := os.Args[3]
 		psqlQuery(cfg, fmt.Sprintf(
 			"SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name = '%s' ORDER BY ordinal_position;",
-			table,
+			os.Args[3],
 		))
 
 	case "query":
 		if len(os.Args) < 4 {
-			fatal("Usage: cli db query \"SELECT ...\"")
+			fatal("Usage: {{.ProjectName}} db query \"SELECT ...\"")
 		}
-		q := strings.Join(os.Args[3:], " ")
-		psqlQuery(cfg, q)
+		psqlQuery(cfg, strings.Join(os.Args[3:], " "))
 
 	case "shell":
 		psqlShell(cfg)
 
 	default:
-		fatal("Unknown db command: %s", cmd)
+		fatal("Unknown db command: %s", os.Args[2])
 	}
 }
 
 // ============================================
 // Helpers
 // ============================================
+
+func mustLoadConfig() *config.Config {
+	cfg, err := config.Load(".")
+	if err != nil {
+		fatal("load config: %v", err)
+	}
+	return cfg
+}
 
 func openDB(cfg *config.Config) *sql.DB {
 	db, err := sql.Open("pgx", cfg.DSN())
@@ -266,9 +310,10 @@ func fatal(format string, args ...interface{}) {
 }
 
 func printUsage() {
-	fmt.Println("Usage: cli <command>")
+	fmt.Println("Usage: {{.ProjectName}} <command>")
 	fmt.Println()
 	fmt.Println("Commands:")
+	fmt.Println("  serve      Start the API server")
 	fmt.Println("  migrate    Database migration operations")
 	fmt.Println("  db         Database utility operations")
 }

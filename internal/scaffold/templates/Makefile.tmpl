@@ -1,17 +1,20 @@
 .PHONY: dev build{{if .IncludeSQLC}} sqlc{{end}}{{if .IncludeSwagger}} swagger{{end}} lint test fmt vet clean help
 
-BINARY := bin/server
-CLI    := go run ./cmd/cli
+APP     := {{.ProjectName}}
+BINARY  := bin/$(APP)
 
 # ============================================
 # Development
 # ============================================
 
-dev: ## Start development server
-	go run ./cmd/server/main.go
+dev: build ## Build and start the server
+	./$(BINARY) serve
 
 build: ## Build binary
-	go build -o $(BINARY) ./cmd/server/main.go
+	go build -o $(BINARY) ./cmd/$(APP)
+
+run: ## Run without building (development)
+	go run ./cmd/$(APP) serve
 
 test: ## Run tests with coverage
 	go test -race -coverprofile=coverage.out ./...
@@ -30,30 +33,30 @@ clean: ## Remove build artifacts
 	rm -rf bin/ coverage.out{{if .IncludeSwagger}} docs/{{end}}
 
 # ============================================
-# Database (via CLI)
+# Database
 # ============================================
 
 migrate: ## Run pending migrations
-	$(CLI) migrate up
+	./$(BINARY) migrate up
 
 migrate-status: ## Show migration status
-	$(CLI) migrate status
+	./$(BINARY) migrate status
 
 migrate-rollback: ## Rollback last migration
-	$(CLI) migrate down
+	./$(BINARY) migrate down
 
 migrate-create: ## Create migration (NAME=create_posts)
 	@test -n "$(NAME)" || (echo "Usage: make migrate-create NAME=create_posts"; exit 1)
-	$(CLI) migrate create $(NAME)
+	./$(BINARY) migrate create $(NAME)
 
 test-db: ## Test database connection
-	$(CLI) db test
+	./$(BINARY) db test
 
 db-tables: ## List all tables
-	$(CLI) db tables
+	./$(BINARY) db tables
 
 db-shell: ## Open psql shell
-	$(CLI) db shell
+	./$(BINARY) db shell
 
 # ============================================
 # Code Generation
@@ -66,7 +69,7 @@ sqlc: ## Generate SQLC code from queries
 {{- if .IncludeSwagger}}
 
 swagger: ## Generate Swagger docs from annotations
-	swag init -g cmd/server/main.go --output docs
+	swag init -g cmd/$(APP)/main.go --output docs
 {{- end}}
 {{- if .IncludeSampleModule}}
 
@@ -84,6 +87,7 @@ mock: ## Generate mocks (requires mockgen)
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
-	@echo "CLI commands (go run ./cmd/cli):"
+	@echo "CLI: $(APP) <command>"
+	@echo "  serve                        Start the API server"
 	@echo "  migrate up|status|down|create|up-to|down-to|version|fix"
 	@echo "  db      test|tables|columns|query|shell"
