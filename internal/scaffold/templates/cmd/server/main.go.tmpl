@@ -15,6 +15,17 @@ import (
 	"{{.ModulePath}}/pkg/logger"
 )
 
+{{- if .IncludeSwagger}}
+
+// @title           {{.ProjectName}} API
+// @version         1.0
+// @description     API server for {{.ProjectName}}
+// @BasePath        /api/v1
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+{{- end}}
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

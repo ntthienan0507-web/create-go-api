@@ -24,6 +24,11 @@ import (
 {{- if .IncludeSampleModule}}
 	usermodule "{{.ModulePath}}/internal/module/user"
 {{- end}}
+{{- if .IncludeSwagger}}
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "{{.ModulePath}}/docs"
+{{- end}}
 )
 
 // App is the DI container. All dependencies live here — NO globals.
@@ -107,6 +112,11 @@ func (a *App) setupRouter() {
 	})
 
 	a.registerModules(api)
+{{- if .IncludeSwagger}}
+
+	// Swagger UI
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+{{- end}}
 
 	r.NoRoute(func(ctx *gin.Context) {
 		ctx.JSON(http.StatusNotFound, gin.H{

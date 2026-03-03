@@ -23,6 +23,7 @@ type ProjectConfig struct {
 
 	// Features
 	IncludeSampleModule bool
+	IncludeSwagger      bool
 
 	// Server
 	ServerPort int    // default 8080

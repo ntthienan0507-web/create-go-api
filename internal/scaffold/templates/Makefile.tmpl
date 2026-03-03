@@ -1,4 +1,4 @@
-.PHONY: dev build{{if .IncludeSQLC}} sqlc{{end}} lint test test-db mock migrate-create fmt vet clean
+.PHONY: dev build{{if .IncludeSQLC}} sqlc{{end}} lint test test-db{{if .IncludeSwagger}} swagger{{end}} mock migrate-create fmt vet clean
 
 BINARY := bin/server
 MIGRATIONS_DIR := db/migrations
@@ -27,6 +27,13 @@ test:
 # Test database connection
 test-db:
 	go run ./cmd/dbtest/main.go
+
+{{- if .IncludeSwagger}}
+
+# Swagger docs generation (run after changing annotations)
+swagger:
+	swag init -g cmd/server/main.go --output docs
+{{- end}}
 
 # Create migration file
 migrate-create:

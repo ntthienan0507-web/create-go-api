@@ -31,6 +31,10 @@ var manifest = []FileRule{
 	{TmplPath: "dot-gitignore.tmpl", OutPath: ".gitignore"},
 	{TmplPath: "go.mod.tmpl", OutPath: "go.mod"},
 
+	// --- Swagger ---
+	{TmplPath: "docs/dot-gitkeep.tmpl", OutPath: "docs/.gitkeep",
+		Include: func(c *ProjectConfig) bool { return c.IncludeSwagger }},
+
 	// --- SQLC-only files ---
 	{TmplPath: "internal/database/postgres.go.tmpl", OutPath: "internal/database/postgres.go",
 		Include: func(c *ProjectConfig) bool { return c.IncludeSQLC }},

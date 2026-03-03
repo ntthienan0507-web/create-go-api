@@ -50,6 +50,7 @@ func TestScaffold(t *testing.T) {
 				"internal/auth/keycloak.go",
 				"internal/database/gorm.go",
 				"internal/module/user/repository_gorm.go",
+				"docs/.gitkeep",
 			},
 		},
 		{
@@ -76,12 +77,13 @@ func TestScaffold(t *testing.T) {
 			},
 		},
 		{
-			name: "both_both_with_module",
+			name: "both_both_with_module_swagger",
 			config: ProjectConfig{
 				ModulePath:          "github.com/test/my-api",
 				DBDriver:            "both",
 				AuthProvider:        "both",
 				IncludeSampleModule: true,
+				IncludeSwagger:      true,
 			},
 			mustExist: []string{
 				"internal/auth/jwt.go",
@@ -93,6 +95,7 @@ func TestScaffold(t *testing.T) {
 				"internal/module/user/repository_gorm.go",
 				"db/sqlc/db.go",
 				"sqlc.yaml",
+				"docs/.gitkeep",
 			},
 			mustNotExist: []string{},
 		},

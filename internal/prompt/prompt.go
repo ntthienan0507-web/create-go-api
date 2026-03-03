@@ -90,6 +90,14 @@ func Run() (*scaffold.ProjectConfig, error) {
 				Description("Generates a complete CRUD module as reference").
 				Value(&cfg.IncludeSampleModule),
 		),
+
+		// Group 5: Swagger
+		huh.NewGroup(
+			huh.NewConfirm().
+				Title("Include Swagger/OpenAPI docs?").
+				Description("Adds swag annotations and /swagger/index.html endpoint").
+				Value(&cfg.IncludeSwagger),
+		),
 	)
 
 	if err := form.Run(); err != nil {
