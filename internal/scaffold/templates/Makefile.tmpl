@@ -1,60 +1,121 @@
-.PHONY: dev build{{if .IncludeSQLC}} sqlc{{end}} lint test test-db{{if .IncludeSwagger}} swagger{{end}} mock migrate-create fmt vet clean
+.PHONY: dev build{{if .IncludeSQLC}} sqlc{{end}} lint test test-db{{if .IncludeSwagger}} swagger{{end}} \
+	migrate migrate-status migrate-rollback migrate-create \
+	mock fmt vet clean help
 
 BINARY := bin/server
 MIGRATIONS_DIR := db/migrations
 
+# Load .env if present
+-include .env
+export
+
+# DSN for goose CLI
+DSN := postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSL_MODE)
+
+# ============================================
 # Development
-dev:
+# ============================================
+
+dev: ## Start development server
 	go run ./cmd/server/main.go
 
-# Build
-build:
+build: ## Build binary
 	go build -o $(BINARY) ./cmd/server/main.go
-{{if .IncludeSQLC}}
-# SQLC code generation
-sqlc:
-	sqlc generate
-{{end}}
-# Linting
-lint:
-	golangci-lint run ./...
 
-# Testing
-test:
+test: ## Run tests with coverage
 	go test -race -coverprofile=coverage.out ./...
 	go tool cover -func=coverage.out
 
-# Test database connection
-test-db:
+test-db: ## Test database connection
 	go run ./cmd/dbtest/main.go
 
-{{- if .IncludeSwagger}}
+lint: ## Run linter
+	golangci-lint run ./...
 
-# Swagger docs generation (run after changing annotations)
-swagger:
-	swag init -g cmd/server/main.go --output docs
-{{- end}}
+fmt: ## Format code
+	gofmt -w .
 
-# Create migration file
-migrate-create:
+vet: ## Run go vet
+	go vet ./...
+
+clean: ## Remove build artifacts
+	rm -rf bin/ coverage.out{{if .IncludeSwagger}} docs/{{end}}
+
+# ============================================
+# Database Migrations (goose)
+# ============================================
+
+migrate: ## Run all pending migrations
+	goose -dir $(MIGRATIONS_DIR) postgres "$(DSN)" up
+
+migrate-status: ## Show migration status
+	goose -dir $(MIGRATIONS_DIR) postgres "$(DSN)" status
+
+migrate-rollback: ## Rollback last migration
+	goose -dir $(MIGRATIONS_DIR) postgres "$(DSN)" down
+
+migrate-create: ## Create new migration file (NAME=create_posts)
 	@test -n "$(NAME)" || (echo "Usage: make migrate-create NAME=create_posts"; exit 1)
 	goose -dir $(MIGRATIONS_DIR) create $(NAME) sql
-{{if .IncludeSampleModule}}
-# Mock generation (requires mockgen)
-mock:
+
+migrate-to: ## Migrate up to a specific version (VERSION=00002)
+	@test -n "$(VERSION)" || (echo "Usage: make migrate-to VERSION=00002"; exit 1)
+	goose -dir $(MIGRATIONS_DIR) postgres "$(DSN)" up-to $(VERSION)
+
+migrate-down-to: ## Rollback to a specific version (VERSION=00001)
+	@test -n "$(VERSION)" || (echo "Usage: make migrate-down-to VERSION=00001"; exit 1)
+	goose -dir $(MIGRATIONS_DIR) postgres "$(DSN)" down-to $(VERSION)
+
+migrate-fix: ## Force set migration version when stuck (VERSION=00002)
+	@test -n "$(VERSION)" || (echo "Usage: make migrate-fix VERSION=00002"; exit 1)
+	goose -dir $(MIGRATIONS_DIR) postgres "$(DSN)" fix $(VERSION)
+
+# ============================================
+# Code Generation
+# ============================================
+{{- if .IncludeSQLC}}
+
+sqlc: ## Generate SQLC code from queries
+	sqlc generate
+{{- end}}
+{{- if .IncludeSwagger}}
+
+swagger: ## Generate Swagger docs from annotations
+	swag init -g cmd/server/main.go --output docs
+{{- end}}
+{{- if .IncludeSampleModule}}
+
+mock: ## Generate mocks (requires mockgen)
 	@mkdir -p internal/module/user/mock
 	mockgen -source=internal/module/user/repository.go \
 		-destination=internal/module/user/mock/repository_mock.go \
 		-package=mock
-{{end}}
-# Format
-fmt:
-	gofmt -w .
+{{- end}}
 
-# Vet
-vet:
-	go vet ./...
+# ============================================
+# Database Utilities
+# ============================================
 
-# Clean
-clean:
-	rm -rf bin/ coverage.out
+db-query: ## Run ad-hoc SQL query (QUERY="SELECT ...")
+	@test -n "$(QUERY)" || (echo 'Usage: make db-query QUERY="SELECT * FROM users LIMIT 5"'; exit 1)
+	@PGPASSWORD=$(DB_PASSWORD) psql -U $(DB_USER) -d $(DB_NAME) -h $(DB_HOST) -p $(DB_PORT) -c "$(QUERY)"
+
+db-columns: ## Show columns of a table (TABLE=users)
+	@test -n "$(TABLE)" || (echo "Usage: make db-columns TABLE=users"; exit 1)
+	@PGPASSWORD=$(DB_PASSWORD) psql -U $(DB_USER) -d $(DB_NAME) -h $(DB_HOST) -p $(DB_PORT) -c \
+		"SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name = '$(TABLE)' ORDER BY ordinal_position;"
+
+db-tables: ## List all tables in the database
+	@PGPASSWORD=$(DB_PASSWORD) psql -U $(DB_USER) -d $(DB_NAME) -h $(DB_HOST) -p $(DB_PORT) -c \
+		"SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;"
+
+db-shell: ## Open psql shell
+	@PGPASSWORD=$(DB_PASSWORD) psql -U $(DB_USER) -d $(DB_NAME) -h $(DB_HOST) -p $(DB_PORT)
+
+# ============================================
+# Help
+# ============================================
+
+help: ## Show available commands
+	@echo "Available commands:"
+	@awk 'BEGIN {FS = ":.*## "; print ""} /^[a-zA-Z_-]+:.*## / {printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
