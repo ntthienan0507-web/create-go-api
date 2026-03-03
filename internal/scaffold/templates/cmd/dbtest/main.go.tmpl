@@ -1,0 +1,47 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"{{.ModulePath}}/internal/config"
+)
+
+func main() {
+	cfg, err := config.Load(".")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "load config: %v\n", err)
+		os.Exit(1)
+	}
+
+	dsn := cfg.DSN()
+	fmt.Printf("Connecting to: %s@%s:%d/%s ...\n", cfg.DBUser, cfg.DBHost, cfg.DBPort, cfg.DBName)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "FAIL: %v\n", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+
+	if err := pool.Ping(ctx); err != nil {
+		fmt.Fprintf(os.Stderr, "FAIL: ping: %v\n", err)
+		os.Exit(1)
+	}
+
+	var version string
+	if err := pool.QueryRow(ctx, "SELECT version()").Scan(&version); err != nil {
+		fmt.Fprintf(os.Stderr, "FAIL: query: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("OK: connected successfully")
+	fmt.Printf("    %s\n", version)
+}

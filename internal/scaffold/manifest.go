@@ -11,6 +11,7 @@ type FileRule struct {
 var manifest = []FileRule{
 	// --- Always included (core skeleton) ---
 	{TmplPath: "cmd/server/main.go.tmpl", OutPath: "cmd/server/main.go"},
+	{TmplPath: "cmd/dbtest/main.go.tmpl", OutPath: "cmd/dbtest/main.go"},
 	{TmplPath: "internal/config/config.go.tmpl", OutPath: "internal/config/config.go"},
 	{TmplPath: "internal/app/app.go.tmpl", OutPath: "internal/app/app.go"},
 	{TmplPath: "internal/middleware/auth.go.tmpl", OutPath: "internal/middleware/auth.go"},

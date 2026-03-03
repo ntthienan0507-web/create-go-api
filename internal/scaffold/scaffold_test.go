@@ -26,6 +26,7 @@ func TestScaffold(t *testing.T) {
 			},
 			mustExist: []string{
 				"cmd/server/main.go",
+				"cmd/dbtest/main.go",
 				"internal/app/app.go",
 				"internal/config/config.go",
 				"internal/auth/provider.go",
