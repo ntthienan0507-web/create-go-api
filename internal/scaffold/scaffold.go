@@ -52,6 +52,14 @@ func RunTo(outputDir string, cfg *ProjectConfig) error {
 		fmt.Println("  go mod tidy")
 	}
 
+	// Install binary
+	binPath := "./cmd/" + cfg.ProjectName
+	if err := runCommand(outputDir, "go", "install", binPath); err != nil {
+		fmt.Fprintf(os.Stderr, "  warning: go install failed: %v\n", err)
+	} else {
+		fmt.Printf("  go install %s\n", binPath)
+	}
+
 	// Init git repo
 	if err := runCommand(outputDir, "git", "init"); err != nil {
 		fmt.Fprintf(os.Stderr, "  warning: git init failed: %v\n", err)
