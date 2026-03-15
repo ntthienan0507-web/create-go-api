@@ -79,4 +79,176 @@ var manifest = []FileRule{
 		Include: func(c *ProjectConfig) bool { return c.IncludeSampleModule && c.IncludeSQLC }},
 	{TmplPath: "internal/module/user/repository_gorm.go.tmpl", OutPath: "internal/module/user/repository_gorm.go",
 		Include: func(c *ProjectConfig) bool { return c.IncludeSampleModule && c.IncludeGORM }},
+
+	// --- Redis ---
+	{TmplPath: "pkg/database/redis.go.tmpl", OutPath: "pkg/database/redis.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeRedis }},
+	{TmplPath: "pkg/cache/redis.go.tmpl", OutPath: "pkg/cache/redis.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeRedis }},
+
+	// --- Kafka + Outbox ---
+	{TmplPath: "pkg/broker/broker.go.tmpl", OutPath: "pkg/broker/broker.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+	{TmplPath: "pkg/broker/topic.go.tmpl", OutPath: "pkg/broker/topic.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+	{TmplPath: "pkg/broker/config.go.tmpl", OutPath: "pkg/broker/config.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+	{TmplPath: "pkg/broker/producer.go.tmpl", OutPath: "pkg/broker/producer.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+	{TmplPath: "pkg/broker/consumer.go.tmpl", OutPath: "pkg/broker/consumer.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+	{TmplPath: "pkg/broker/dispatcher.go.tmpl", OutPath: "pkg/broker/dispatcher.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+	{TmplPath: "pkg/broker/batcher.go.tmpl", OutPath: "pkg/broker/batcher.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+	{TmplPath: "pkg/broker/outbox.go.tmpl", OutPath: "pkg/broker/outbox.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+	{TmplPath: "pkg/broker/relay.go.tmpl", OutPath: "pkg/broker/relay.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+	{TmplPath: "pkg/broker/idempotency.go.tmpl", OutPath: "pkg/broker/idempotency.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+	{TmplPath: "pkg/broker/errors.go.tmpl", OutPath: "pkg/broker/errors.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+	{TmplPath: "pkg/broker/scram.go.tmpl", OutPath: "pkg/broker/scram.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+	{TmplPath: "db/migrations/00002_create_outbox.sql.tmpl", OutPath: "db/migrations/00002_create_outbox.sql",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+	{TmplPath: "db/migrations/00003_create_processed_events.sql.tmpl", OutPath: "db/migrations/00003_create_processed_events.sql",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka }},
+
+	// --- Kafka sample events (only with sample module) ---
+	{TmplPath: "modules/user/events.go.tmpl", OutPath: "modules/user/events.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeKafka && c.IncludeSampleModule }},
+
+	// --- Encryption ---
+	{TmplPath: "pkg/crypto/crypto.go.tmpl", OutPath: "pkg/crypto/crypto.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeEncryption }},
+
+	// --- Cron ---
+	{TmplPath: "pkg/cron/cron.go.tmpl", OutPath: "pkg/cron/cron.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeCron }},
+	{TmplPath: "cmd/cron.go.tmpl", OutPath: "cmd/cron.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeCron }},
+
+	// --- WebSocket ---
+	{TmplPath: "pkg/ws/message.go.tmpl", OutPath: "pkg/ws/message.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeWebSocket }},
+	{TmplPath: "pkg/ws/client.go.tmpl", OutPath: "pkg/ws/client.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeWebSocket }},
+	{TmplPath: "pkg/ws/hub.go.tmpl", OutPath: "pkg/ws/hub.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeWebSocket }},
+	{TmplPath: "pkg/ws/handler.go.tmpl", OutPath: "pkg/ws/handler.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeWebSocket }},
+
+	// --- OpenTelemetry ---
+	{TmplPath: "pkg/tracing/tracing.go.tmpl", OutPath: "pkg/tracing/tracing.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeOTEL }},
+
+	// --- External: SendGrid ---
+	{TmplPath: "pkg/external/sendgrid/client.go.tmpl", OutPath: "pkg/external/sendgrid/client.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeSendGrid }},
+	{TmplPath: "pkg/external/sendgrid/types.go.tmpl", OutPath: "pkg/external/sendgrid/types.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeSendGrid }},
+	{TmplPath: "pkg/external/sendgrid/errors.go.tmpl", OutPath: "pkg/external/sendgrid/errors.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeSendGrid }},
+
+	// --- External: Stripe ---
+	{TmplPath: "pkg/external/stripe/client.go.tmpl", OutPath: "pkg/external/stripe/client.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeStripe }},
+	{TmplPath: "pkg/external/stripe/types.go.tmpl", OutPath: "pkg/external/stripe/types.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeStripe }},
+	{TmplPath: "pkg/external/stripe/errors.go.tmpl", OutPath: "pkg/external/stripe/errors.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeStripe }},
+
+	// --- External: IceWarp ---
+	{TmplPath: "pkg/external/icewarp/client.go.tmpl", OutPath: "pkg/external/icewarp/client.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeIceWarp }},
+	{TmplPath: "pkg/external/icewarp/types.go.tmpl", OutPath: "pkg/external/icewarp/types.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeIceWarp }},
+	{TmplPath: "pkg/external/icewarp/errors.go.tmpl", OutPath: "pkg/external/icewarp/errors.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeIceWarp }},
+
+	// --- External: Firebase ---
+	{TmplPath: "pkg/external/firebase/client.go.tmpl", OutPath: "pkg/external/firebase/client.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeFirebase }},
+	{TmplPath: "pkg/external/firebase/types.go.tmpl", OutPath: "pkg/external/firebase/types.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeFirebase }},
+	{TmplPath: "pkg/external/firebase/errors.go.tmpl", OutPath: "pkg/external/firebase/errors.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeFirebase }},
+
+	// --- External: Elasticsearch ---
+	{TmplPath: "pkg/external/elasticsearch/client.go.tmpl", OutPath: "pkg/external/elasticsearch/client.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeElasticsearch }},
+	{TmplPath: "pkg/external/elasticsearch/types.go.tmpl", OutPath: "pkg/external/elasticsearch/types.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeElasticsearch }},
+	{TmplPath: "pkg/external/elasticsearch/errors.go.tmpl", OutPath: "pkg/external/elasticsearch/errors.go",
+		Include: func(c *ProjectConfig) bool { return c.IncludeElasticsearch }},
+
+	// --- Kubernetes ---
+	{TmplPath: "deployments/k8s/base/kustomization.yaml.tmpl", OutPath: "deployments/k8s/base/kustomization.yaml",
+		Include: func(c *ProjectConfig) bool { return c.IncludeK8s }},
+	{TmplPath: "deployments/k8s/base/deployment.yaml.tmpl", OutPath: "deployments/k8s/base/deployment.yaml",
+		Include: func(c *ProjectConfig) bool { return c.IncludeK8s }},
+	{TmplPath: "deployments/k8s/base/service.yaml.tmpl", OutPath: "deployments/k8s/base/service.yaml",
+		Include: func(c *ProjectConfig) bool { return c.IncludeK8s }},
+	{TmplPath: "deployments/k8s/base/ingress.yaml.tmpl", OutPath: "deployments/k8s/base/ingress.yaml",
+		Include: func(c *ProjectConfig) bool { return c.IncludeK8s }},
+	{TmplPath: "deployments/k8s/base/configmap.yaml.tmpl", OutPath: "deployments/k8s/base/configmap.yaml",
+		Include: func(c *ProjectConfig) bool { return c.IncludeK8s }},
+	{TmplPath: "deployments/k8s/base/hpa.yaml.tmpl", OutPath: "deployments/k8s/base/hpa.yaml",
+		Include: func(c *ProjectConfig) bool { return c.IncludeK8s }},
+	{TmplPath: "deployments/k8s/base/networkpolicy.yaml.tmpl", OutPath: "deployments/k8s/base/networkpolicy.yaml",
+		Include: func(c *ProjectConfig) bool { return c.IncludeK8s }},
+
+	// --- SonarQube ---
+	{TmplPath: "sonar-project.properties.tmpl", OutPath: "sonar-project.properties",
+		Include: func(c *ProjectConfig) bool { return c.IncludeSonar }},
+
+	// --- CI/CD ---
+	{TmplPath: "dot-github/workflows/ci.yml.tmpl", OutPath: ".github/workflows/ci.yml",
+		Include: func(c *ProjectConfig) bool { return c.IncludeGitHubCI }},
+	{TmplPath: "dot-gitlab-ci.yml.tmpl", OutPath: ".gitlab-ci.yml",
+		Include: func(c *ProjectConfig) bool { return c.IncludeGitLabCI }},
+
+	// --- Shared infra (always included when any external service is selected) ---
+	{TmplPath: "pkg/httpclient/client.go.tmpl", OutPath: "pkg/httpclient/client.go",
+		Include: func(c *ProjectConfig) bool {
+			return c.IncludeSendGrid || c.IncludeStripe || c.IncludeIceWarp || c.IncludeElasticsearch
+		}},
+	{TmplPath: "pkg/httpclient/service.go.tmpl", OutPath: "pkg/httpclient/service.go",
+		Include: func(c *ProjectConfig) bool {
+			return c.IncludeSendGrid || c.IncludeStripe || c.IncludeIceWarp || c.IncludeElasticsearch
+		}},
+	{TmplPath: "pkg/httpclient/codec.go.tmpl", OutPath: "pkg/httpclient/codec.go",
+		Include: func(c *ProjectConfig) bool {
+			return c.IncludeSendGrid || c.IncludeStripe || c.IncludeIceWarp || c.IncludeElasticsearch
+		}},
+	{TmplPath: "pkg/httpclient/token.go.tmpl", OutPath: "pkg/httpclient/token.go",
+		Include: func(c *ProjectConfig) bool {
+			return c.IncludeSendGrid || c.IncludeStripe || c.IncludeIceWarp || c.IncludeElasticsearch
+		}},
+
+	// --- Retry (needed by httpclient and broker) ---
+	{TmplPath: "pkg/retry/retry.go.tmpl", OutPath: "pkg/retry/retry.go",
+		Include: func(c *ProjectConfig) bool {
+			return c.IncludeKafka || c.IncludeSendGrid || c.IncludeStripe || c.IncludeIceWarp || c.IncludeElasticsearch
+		}},
+
+	// --- Circuit breaker (needed by httpclient and broker) ---
+	{TmplPath: "pkg/circuitbreaker/circuitbreaker.go.tmpl", OutPath: "pkg/circuitbreaker/circuitbreaker.go",
+		Include: func(c *ProjectConfig) bool {
+			return c.IncludeKafka || c.IncludeSendGrid || c.IncludeStripe || c.IncludeIceWarp || c.IncludeElasticsearch
+		}},
+
+	// --- Async (worker pool — always included, used by many features) ---
+	{TmplPath: "pkg/async/worker.go.tmpl", OutPath: "pkg/async/worker.go"},
+	{TmplPath: "pkg/async/parallel.go.tmpl", OutPath: "pkg/async/parallel.go"},
+	{TmplPath: "pkg/async/context.go.tmpl", OutPath: "pkg/async/context.go"},
+
+	// --- App services registry ---
+	{TmplPath: "pkg/app/services.go.tmpl", OutPath: "pkg/app/services.go",
+		Include: func(c *ProjectConfig) bool {
+			return c.IncludeRedis || c.IncludeKafka || c.IncludeSendGrid || c.IncludeStripe ||
+				c.IncludeIceWarp || c.IncludeFirebase || c.IncludeElasticsearch || c.IncludeEncryption
+		}},
 }

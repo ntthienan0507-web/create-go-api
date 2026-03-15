@@ -19,6 +19,7 @@ func Run() (*scaffold.ProjectConfig, error) {
 	}
 
 	var portStr string = "8080"
+	var infraChoices, featureChoices, serviceChoices []string
 
 	form := huh.NewForm(
 		// Group 1: Project identity
@@ -98,10 +99,88 @@ func Run() (*scaffold.ProjectConfig, error) {
 				Description("Adds swag annotations and /swagger/index.html endpoint").
 				Value(&cfg.IncludeSwagger),
 		),
+
+		// Group 6: Infrastructure
+		huh.NewGroup(
+			huh.NewMultiSelect[string]().
+				Title("Infrastructure (space to select)").
+				Options(
+					huh.NewOption("Redis — cache, sessions, pub/sub", "redis"),
+					huh.NewOption("Kafka — event streaming, outbox pattern", "kafka"),
+					huh.NewOption("Encryption — AES-256 for PII fields", "encryption"),
+				).
+				Value(&infraChoices),
+		),
+
+		// Group 7: Extra features
+		huh.NewGroup(
+			huh.NewMultiSelect[string]().
+				Title("Features (space to select)").
+				Options(
+					huh.NewOption("Cron — scheduled background jobs", "cron"),
+					huh.NewOption("WebSocket — real-time communication", "ws"),
+					huh.NewOption("OpenTelemetry — distributed tracing", "otel"),
+				).
+				Value(&featureChoices),
+		),
+
+		// Group 8: External services
+		huh.NewGroup(
+			huh.NewMultiSelect[string]().
+				Title("External services (space to select)").
+				Options(
+					huh.NewOption("SendGrid — transactional email", "sendgrid"),
+					huh.NewOption("Stripe — payment processing", "stripe"),
+					huh.NewOption("IceWarp — mail server (XML API)", "icewarp"),
+					huh.NewOption("Firebase — push notifications", "firebase"),
+					huh.NewOption("Elasticsearch — search & analytics", "elasticsearch"),
+				).
+				Value(&serviceChoices),
+		),
+
+		// Group 9: DevOps
+		huh.NewGroup(
+			huh.NewConfirm().Title("Include Kubernetes manifests?").Value(&cfg.IncludeK8s),
+			huh.NewConfirm().Title("Include SonarQube config?").Value(&cfg.IncludeSonar),
+			huh.NewSelect[string]().
+				Title("CI/CD provider").
+				Options(
+					huh.NewOption("None", ""),
+					huh.NewOption("GitHub Actions", "github"),
+					huh.NewOption("GitLab CI", "gitlab"),
+					huh.NewOption("Both", "both"),
+				).
+				Value(&cfg.CIProvider),
+		),
 	)
 
 	if err := form.Run(); err != nil {
 		return nil, fmt.Errorf("prompt cancelled: %w", err)
+	}
+
+	// Map multi-select choices to config
+	for _, c := range infraChoices {
+		switch c {
+		case "redis":      cfg.IncludeRedis = true
+		case "kafka":      cfg.IncludeKafka = true
+		case "encryption": cfg.IncludeEncryption = true
+		}
+	}
+	for _, c := range featureChoices {
+		switch c {
+		case "cron": cfg.IncludeCron = true
+		case "ws":   cfg.IncludeWebSocket = true
+		case "otel": cfg.IncludeOTEL = true
+		}
+	}
+	for _, c := range serviceChoices {
+		switch c {
+		case "sendgrid":      cfg.IncludeSendGrid = true
+		case "stripe":        cfg.IncludeStripe = true
+		case "icewarp":       cfg.IncludeIceWarp = true
+		case "firebase":      cfg.IncludeFirebase = true
+		case "elasticsearch": cfg.IncludeElasticsearch = true
+		}
 	}
 
 	// Parse port

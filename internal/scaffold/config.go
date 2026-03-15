@@ -25,6 +25,30 @@ type ProjectConfig struct {
 	IncludeSampleModule bool
 	IncludeSwagger      bool
 
+	// Infrastructure
+	IncludeRedis      bool
+	IncludeKafka      bool
+	IncludeEncryption bool
+
+	// Extra features
+	IncludeCron      bool
+	IncludeWebSocket bool
+	IncludeOTEL      bool
+
+	// External services
+	IncludeSendGrid      bool
+	IncludeStripe        bool
+	IncludeIceWarp       bool
+	IncludeFirebase      bool
+	IncludeElasticsearch bool
+
+	// DevOps
+	IncludeK8s      bool
+	IncludeSonar    bool
+	CIProvider      string // "github" | "gitlab" | "both" | ""
+	IncludeGitHubCI bool   // derived
+	IncludeGitLabCI bool   // derived
+
 	// Server
 	ServerPort int    // default 8080
 	DBName     string // default = ProjectName with hyphens → underscores
@@ -37,6 +61,9 @@ func (c *ProjectConfig) Derive() {
 	c.IncludeGORM = c.DBDriver == "gorm" || c.DBDriver == "both"
 	c.IncludeJWT = c.AuthProvider == "jwt" || c.AuthProvider == "both"
 	c.IncludeKeycloak = c.AuthProvider == "keycloak" || c.AuthProvider == "both"
+
+	c.IncludeGitHubCI = c.CIProvider == "github" || c.CIProvider == "both"
+	c.IncludeGitLabCI = c.CIProvider == "gitlab" || c.CIProvider == "both"
 
 	if c.ProjectName == "" {
 		c.ProjectName = path.Base(c.ModulePath)
