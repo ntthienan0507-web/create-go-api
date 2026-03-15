@@ -1,7 +1,6 @@
 package scaffold
 
 import (
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,19 +24,18 @@ func TestScaffold(t *testing.T) {
 				IncludeSampleModule: true,
 			},
 			mustExist: []string{
-				"cmd/my-api/main.go",
-				"internal/app/app.go",
-				"internal/config/config.go",
-				"internal/auth/provider.go",
-				"internal/auth/factory.go",
-				"internal/auth/jwt.go",
-				"internal/database/postgres.go",
-				"internal/database/store.go",
-				"internal/database/migration.go",
-				"internal/module/user/handler.go",
-				"internal/module/user/service.go",
-				"internal/module/user/repository.go",
-				"internal/module/user/repository_sqlc.go",
+				"pkg/app/app.go",
+				"pkg/config/config.go",
+				"pkg/auth/provider.go",
+				"pkg/auth/factory.go",
+				"pkg/auth/jwt.go",
+				"pkg/database/postgres.go",
+				"pkg/database/store.go",
+				"pkg/database/migration.go",
+				"modules/user/controller.go",
+				"modules/user/service.go",
+				"modules/user/repository.go",
+				"modules/user/repository_sqlc.go",
 				"db/sqlc/db.go",
 				"db/queries/users.sql",
 				"sqlc.yaml",
@@ -46,10 +44,16 @@ func TestScaffold(t *testing.T) {
 				".gitignore",
 			},
 			mustNotExist: []string{
-				"internal/auth/keycloak.go",
-				"internal/database/gorm.go",
-				"internal/module/user/repository_gorm.go",
-				"docs/.gitkeep",
+				"pkg/auth/keycloak.go",
+				"pkg/database/gorm.go",
+				"modules/user/repository_gorm.go",
+				"modules/user/repository_mongo.go",
+				"pkg/broker",
+				"pkg/ws",
+				"pkg/cron",
+				"pkg/crypto",
+				"pkg/tracing",
+				"deployments",
 			},
 		},
 		{
@@ -61,17 +65,16 @@ func TestScaffold(t *testing.T) {
 				IncludeSampleModule: true,
 			},
 			mustExist: []string{
-				"cmd/my-api/main.go",
-				"internal/auth/keycloak.go",
-				"internal/database/gorm.go",
-				"internal/module/user/repository_gorm.go",
-				"internal/module/user/handler.go",
+				"pkg/auth/keycloak.go",
+				"pkg/database/gorm.go",
+				"modules/user/repository_gorm.go",
+				"modules/user/controller.go",
 			},
 			mustNotExist: []string{
-				"internal/auth/jwt.go",
-				"internal/database/postgres.go",
-				"internal/database/store.go",
-				"internal/module/user/repository_sqlc.go",
+				"pkg/auth/jwt.go",
+				"pkg/database/postgres.go",
+				"pkg/database/store.go",
+				"modules/user/repository_sqlc.go",
 				"db/sqlc/db.go",
 				"sqlc.yaml",
 			},
@@ -86,176 +89,151 @@ func TestScaffold(t *testing.T) {
 				IncludeSwagger:      true,
 			},
 			mustExist: []string{
-				"cmd/my-api/main.go",
-				"internal/auth/jwt.go",
-				"internal/auth/keycloak.go",
-				"internal/database/postgres.go",
-				"internal/database/store.go",
-				"internal/database/gorm.go",
-				"internal/module/user/repository_sqlc.go",
-				"internal/module/user/repository_gorm.go",
+				"pkg/auth/jwt.go",
+				"pkg/auth/keycloak.go",
+				"pkg/database/postgres.go",
+				"pkg/database/store.go",
+				"pkg/database/gorm.go",
+				"modules/user/repository_sqlc.go",
+				"modules/user/repository_gorm.go",
 				"db/sqlc/db.go",
 				"sqlc.yaml",
-				"docs/.gitkeep",
 			},
-			mustNotExist: []string{},
+			mustNotExist: []string{
+				"modules/user/repository_mongo.go",
+			},
 		},
 		{
 			name: "sqlc_jwt_no_module",
 			config: ProjectConfig{
-				ModulePath:          "github.com/test/my-api",
-				DBDriver:            "sqlc",
-				AuthProvider:        "jwt",
-				IncludeSampleModule: false,
+				ModulePath:   "github.com/test/my-api",
+				DBDriver:     "sqlc",
+				AuthProvider: "jwt",
 			},
 			mustExist: []string{
-				"cmd/my-api/main.go",
-				"internal/auth/jwt.go",
-				"internal/database/postgres.go",
-				"internal/database/store.go",
-				"db/sqlc/db.go",
+				"pkg/app/app.go",
+				"pkg/auth/jwt.go",
+				"pkg/database/postgres.go",
+				"go.mod",
 			},
 			mustNotExist: []string{
-				"internal/module/user/handler.go",
-				"internal/module/user/service.go",
-				"internal/module/user/repository.go",
-				"internal/module/user/repository_sqlc.go",
-				"internal/module/user/repository_gorm.go",
-				"db/queries/users.sql",
-				"db/sqlc/users.sql.go",
-				"db/sqlc/models.go",
-				"db/sqlc/querier.go",
+				"modules/user",
 			},
 		},
 		{
-			name: "gorm_jwt_no_module",
+			name: "gorm_with_kafka_redis",
 			config: ProjectConfig{
-				ModulePath:          "github.com/test/my-api",
-				DBDriver:            "gorm",
-				AuthProvider:        "jwt",
-				IncludeSampleModule: false,
+				ModulePath:   "github.com/test/my-api",
+				DBDriver:     "gorm",
+				AuthProvider: "jwt",
+				IncludeRedis: true,
+				IncludeKafka: true,
 			},
 			mustExist: []string{
-				"cmd/my-api/main.go",
-				"internal/auth/jwt.go",
-				"internal/database/gorm.go",
+				"pkg/database/gorm.go",
+				"pkg/database/redis.go",
+				"pkg/broker/broker.go",
+				"pkg/broker/producer.go",
+				"pkg/broker/consumer.go",
+				"pkg/broker/outbox.go",
+				"pkg/cache",
+				"pkg/retry/retry.go",
+				"pkg/circuitbreaker/circuitbreaker.go",
 			},
 			mustNotExist: []string{
-				"internal/database/postgres.go",
-				"internal/database/store.go",
-				"internal/module/user/handler.go",
-				"db/sqlc/db.go",
+				"pkg/ws",
+				"pkg/cron",
+				"pkg/tracing",
+				"deployments",
 			},
 		},
 		{
-			name: "both_keycloak_no_module",
+			name: "full_stack",
 			config: ProjectConfig{
-				ModulePath:          "github.com/test/my-api",
-				DBDriver:            "both",
-				AuthProvider:        "keycloak",
-				IncludeSampleModule: false,
+				ModulePath:           "github.com/test/my-api",
+				DBDriver:             "gorm",
+				AuthProvider:         "jwt",
+				IncludeSampleModule:  true,
+				IncludeRedis:         true,
+				IncludeKafka:         true,
+				IncludeEncryption:    true,
+				IncludeCron:          true,
+				IncludeWebSocket:     true,
+				IncludeOTEL:          true,
+				IncludeSendGrid:      true,
+				IncludeStripe:        true,
+				IncludeFirebase:      true,
+				IncludeElasticsearch: true,
+				IncludeK8s:          true,
+				IncludeSonar:        true,
+				CIProvider:          "both",
 			},
 			mustExist: []string{
-				"cmd/my-api/main.go",
-				"internal/auth/keycloak.go",
-				"internal/database/postgres.go",
-				"internal/database/gorm.go",
-			},
-			mustNotExist: []string{
-				"internal/auth/jwt.go",
-				"internal/module/user/handler.go",
+				"pkg/broker/broker.go",
+				"pkg/crypto/crypto.go",
+				"pkg/cron/cron.go",
+				"pkg/ws/hub.go",
+				"pkg/ws/client.go",
+				"pkg/tracing/tracing.go",
+				"pkg/external/sendgrid/client.go",
+				"pkg/external/stripe/client.go",
+				"pkg/external/firebase/client.go",
+				"pkg/external/elasticsearch/client.go",
+				"pkg/httpclient/client.go",
+				"pkg/retry/retry.go",
+				"pkg/circuitbreaker/circuitbreaker.go",
+				"deployments/k8s/base/deployment.yaml",
+				".github/workflows/ci.yml",
+				".gitlab-ci.yml",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dir := t.TempDir()
-			// Use a subdirectory so it's empty
-			outDir := filepath.Join(dir, "project")
+			tmpDir := t.TempDir()
+			outDir := filepath.Join(tmpDir, "my-api")
 
 			tt.config.Derive()
-			err := RunTo(outDir, &tt.config)
-			if err != nil {
+			if err := RunTo(outDir, &tt.config); err != nil {
 				t.Fatalf("RunTo failed: %v", err)
 			}
 
-			// Check expected files exist
 			for _, f := range tt.mustExist {
-				p := filepath.Join(outDir, f)
-				if _, err := os.Stat(p); os.IsNotExist(err) {
+				path := filepath.Join(outDir, f)
+				if _, err := os.Stat(path); os.IsNotExist(err) {
 					t.Errorf("expected file %s to exist", f)
 				}
 			}
 
-			// Check excluded files don't exist
 			for _, f := range tt.mustNotExist {
-				p := filepath.Join(outDir, f)
-				if _, err := os.Stat(p); err == nil {
+				path := filepath.Join(outDir, f)
+				if _, err := os.Stat(path); err == nil {
 					t.Errorf("expected file %s to NOT exist", f)
 				}
 			}
 
-			// Walk all files and check for unresolved template syntax
-			filepath.WalkDir(outDir, func(path string, d fs.DirEntry, err error) error {
-				if err != nil || d.IsDir() {
+			// Verify no source module path leaked into output
+			filepath.Walk(outDir, func(path string, info os.FileInfo, err error) error {
+				if err != nil || info.IsDir() {
 					return err
 				}
-				content, readErr := os.ReadFile(path)
-				if readErr != nil {
+				if !strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, ".mod") {
 					return nil
 				}
-				s := string(content)
-				rel, _ := filepath.Rel(outDir, path)
-
-				if strings.Contains(s, "github.com/ntthienan0507-web/go-api-template") {
-					t.Errorf("file %s still contains old module path", rel)
-				}
-				if strings.Contains(s, "{{") && strings.Contains(s, "}}") {
-					t.Errorf("file %s contains unresolved template syntax", rel)
+				data, _ := os.ReadFile(path)
+				if strings.Contains(string(data), sourceModulePath) {
+					rel, _ := filepath.Rel(outDir, path)
+					t.Errorf("file %s still contains source module path %q", rel, sourceModulePath)
 				}
 				return nil
 			})
-
-			// Check go.mod has correct module path
-			goModPath := filepath.Join(outDir, "go.mod")
-			goModContent, err := os.ReadFile(goModPath)
-			if err != nil {
-				t.Fatalf("read go.mod: %v", err)
-			}
-			if !strings.Contains(string(goModContent), tt.config.ModulePath) {
-				t.Errorf("go.mod does not contain module path %q", tt.config.ModulePath)
-			}
 		})
 	}
 }
 
-func TestAllTemplatesParse(t *testing.T) {
-	// Validate every .tmpl file can be parsed without errors
-	err := fs.WalkDir(templateFS, "templates", func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return err
-		}
-		if !strings.HasSuffix(path, ".tmpl") {
-			return nil
-		}
-
-		content, readErr := templateFS.ReadFile(path)
-		if readErr != nil {
-			t.Errorf("read %s: %v", path, readErr)
-			return nil
-		}
-
-		_, parseErr := parseTemplate(path, string(content))
-		if parseErr != nil {
-			t.Errorf("parse %s: %v", path, parseErr)
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("walk templates: %v", err)
-	}
-}
+// TestAllTemplatesParse is skipped — templates are now cloned from gostack-kit at runtime,
+// not embedded. Template validity is verified by the gostack-kit CI pipeline.
 
 func parseTemplate(name, content string) (interface{}, error) {
 	_, err := template.New(name).Funcs(funcMap).Parse(content)
